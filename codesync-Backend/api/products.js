@@ -5,8 +5,7 @@ const router = express.Router();
 const multer = require('multer'); 
 const {v4: uuidv4} = require('uuid');
 const path = require('path');
-
-// commment by abhay 
+ 
 const DIR = './public/'; 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
