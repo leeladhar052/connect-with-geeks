@@ -42,10 +42,8 @@ const Dashboard = () => {
   const fetchUserData = async (searchHandle) => {
     const handleToSearch = searchHandle || handle;
     if (!handleToSearch) return;
-    
     setLoading(true);
     setError(null);
-    
     try {
       const response = await fetch(
         `https://codeforces.com/api/user.info?handles=${handleToSearch}`
@@ -75,10 +73,11 @@ const fetchGfgData = async (searchHandle) => {
 
   try {
     const response = await fetch(
-      `https://geeks-for-geeks-api.vercel.app/${handleToSearch}`,
-      { mode: "no-cors" }
-    );
-    
+  `https://api.allorigins.win/raw?url=${encodeURIComponent(
+    `https://geeks-for-geeks-api.vercel.app/${handleToSearch}`
+  )}`
+);
+
 
     if (!response.ok) {
       throw new Error("GFG API request failed");
@@ -88,12 +87,14 @@ const fetchGfgData = async (searchHandle) => {
     setGfgData(data);
     saveGfgSearch(handleToSearch);
   } catch (err) {
+    console.error(err);
     setGfgError("User not found or GFG API error. Please try again.");
     setGfgData(null);
+  } finally {
+    setGfgLoading(false);
   }
-
-  setGfgLoading(false);
 };
+
 
 
   // Get text color based on user rank
@@ -117,7 +118,7 @@ const fetchGfgData = async (searchHandle) => {
     if (e.key === 'Enter') {
       if (activeTab === "codeforces") {
         fetchUserData();
-      } else {
+      } else if(activeTab === "gfg") {
         fetchGfgData();
       }
     }
@@ -186,7 +187,7 @@ const fetchGfgData = async (searchHandle) => {
                     placeholder="Enter Codeforces handle"
                     value={handle}
                     onChange={(e) => setHandle(e.target.value)}
-                    onKeyPress={handleKeyPress}
+                    onKeyPress = {handleKeyPress}
                   />
                   <Search className="absolute left-3 top-3 text-indigo-400" size={20} />
                 </div>
