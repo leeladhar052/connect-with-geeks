@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Activity, Award, Users, Star, TrendingUp, Search, ChevronRight, Code, BookOpen, GitBranch, Trophy } from "lucide-react";
+import { fetchCodeforcesStats, fetchGfgStats } from "../utils/api";
 
 const Dashboard = () => {
   const [handle, setHandle] = useState("");
@@ -20,7 +21,6 @@ const Dashboard = () => {
     if (savedSearches) {
       setRecentSearches(JSON.parse(savedSearches));
     }
-    
     const savedGfgSearches = localStorage.getItem("recentGfgSearches");
     if (savedGfgSearches) {
       setRecentGfgSearches(JSON.parse(savedGfgSearches));
@@ -40,60 +40,52 @@ const Dashboard = () => {
   };
 
   const fetchUserData = async (searchHandle) => {
-    const handleToSearch = searchHandle || handle;
-    if (!handleToSearch) return;
-    
+    if (!searchHandle) {
+      return;
+    }
     setLoading(true);
     setError(null);
-    
-    try {
-      const response = await fetch(
-        `https://codeforces.com/api/user.info?handles=${handleToSearch}`
-      );
-      
-      if (!response.ok) {
-        throw new Error("API request failed");
-      }
-      
+    console.log(searchHandle)
+    const response = await fetch(
+      `https://codeforces.com/api/user.info?handles=${searchHandle}`
+    );
+    setLoading(false);
+    if (response) {
       const data = await response.json();
       setUserData(data.result[0]);
-      saveSearch(handleToSearch);
-    } catch (err) {
-      setError("User not found or API error. Please try again.");
-      setUserData(null);
+      saveSearch(searchHandle);
     }
-    
-    setLoading(false);
+    else {
+      setUserData(null);
+      throw new Error("API request failed");
+    }
   };
 
-const fetchGfgData = async (searchHandle) => {
-  const handleToSearch = searchHandle || gfgHandle;
-  if (!handleToSearch) return;
 
-  setGfgLoading(true);
-  setGfgError(null);
-
-  try {
+  const fetchGfgData = async (searchHandle) => {
+    if (!searchHandle) {
+      return;
+    }
+    setGfgLoading(true);
+    setGfgError(null);
     const response = await fetch(
-      `https://geeks-for-geeks-api.vercel.app/${handleToSearch}`,
-      { mode: "no-cors" }
+      `https://api.allorigins.win/raw?url=${encodeURIComponent(
+        `https://geeks-for-geeks-api.vercel.app/${searchHandle}`
+      )}`
     );
-    
-
-    if (!response.ok) {
+    setGfgLoading(false);
+    if (response) {
+      const data = await response.json();
+      setGfgData(data);
+      saveGfgSearch(searchHandle);
+    }
+    else {
+      setGfgError("User not found or GFG API error. Please try again.");
+      setGfgData(null);
       throw new Error("GFG API request failed");
     }
+  };
 
-    const data = await response.json();
-    setGfgData(data);
-    saveGfgSearch(handleToSearch);
-  } catch (err) {
-    setGfgError("User not found or GFG API error. Please try again.");
-    setGfgData(null);
-  }
-
-  setGfgLoading(false);
-};
 
 
   // Get text color based on user rank
@@ -117,7 +109,7 @@ const fetchGfgData = async (searchHandle) => {
     if (e.key === 'Enter') {
       if (activeTab === "codeforces") {
         fetchUserData();
-      } else {
+      } else if (activeTab === "gfg") {
         fetchGfgData();
       }
     }
@@ -155,27 +147,27 @@ const fetchGfgData = async (searchHandle) => {
               <h1 className="text-3xl font-bold text-indigo-700 mb-2">CP Profile Explorer</h1>
               <p className="text-gray-600">Search for competitive programmers across platforms</p>
             </div>
-            
+
             {/* Platform tabs */}
             <div className="mb-4 flex border-b border-gray-200">
-              <button 
-                className={`py-2 px-4 font-medium ${activeTab === "codeforces" 
-                  ? "text-indigo-600 border-b-2 border-indigo-600" 
+              <button
+                className={`py-2 px-4 font-medium ${activeTab === "codeforces"
+                  ? "text-indigo-600 border-b-2 border-indigo-600"
                   : "text-gray-500 hover:text-indigo-500"}`}
                 onClick={() => setActiveTab("codeforces")}
               >
                 Codeforces
               </button>
-              <button 
-                className={`py-2 px-4 font-medium ${activeTab === "gfg" 
-                  ? "text-green-600 border-b-2 border-green-600" 
+              <button
+                className={`py-2 px-4 font-medium ${activeTab === "gfg"
+                  ? "text-green-600 border-b-2 border-green-600"
                   : "text-gray-500 hover:text-green-500"}`}
                 onClick={() => setActiveTab("gfg")}
               >
                 GeeksforGeeks
               </button>
             </div>
-            
+
             {activeTab === "codeforces" ? (
               <div className="bg-white shadow-md rounded-lg p-6 mb-6">
                 <h2 className="text-xl font-semibold text-indigo-800 mb-4">Find a Codeforces User</h2>
@@ -190,7 +182,7 @@ const fetchGfgData = async (searchHandle) => {
                   />
                   <Search className="absolute left-3 top-3 text-indigo-400" size={20} />
                 </div>
-                
+
                 <button
                   className="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition-colors duration-300 flex items-center justify-center"
                   onClick={() => fetchUserData()}
@@ -205,7 +197,7 @@ const fetchGfgData = async (searchHandle) => {
                     <span>Search Profile</span>
                   )}
                 </button>
-                
+
                 {recentSearches.length > 0 && (
                   <div className="mt-6">
                     <h3 className="text-sm font-medium text-gray-600 mb-2">Recent searches</h3>
@@ -241,7 +233,7 @@ const fetchGfgData = async (searchHandle) => {
                   />
                   <Search className="absolute left-3 top-3 text-green-400" size={20} />
                 </div>
-                
+
                 <button
                   className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors duration-300 flex items-center justify-center"
                   onClick={() => fetchGfgData()}
@@ -256,7 +248,7 @@ const fetchGfgData = async (searchHandle) => {
                     <span>Search Profile</span>
                   )}
                 </button>
-                
+
                 {recentGfgSearches.length > 0 && (
                   <div className="mt-6">
                     <h3 className="text-sm font-medium text-gray-600 mb-2">Recent searches</h3>
@@ -279,14 +271,14 @@ const fetchGfgData = async (searchHandle) => {
                 )}
               </div>
             )}
-            
+
             {activeTab === "codeforces" && error && (
               <div className="bg-red-50 p-4 rounded-lg border-l-4 border-red-500 text-red-700 mb-6">
                 <p className="font-medium">Error</p>
                 <p className="text-sm">{error}</p>
               </div>
             )}
-            
+
             {activeTab === "gfg" && gfgError && (
               <div className="bg-red-50 p-4 rounded-lg border-l-4 border-red-500 text-red-700 mb-6">
                 <p className="font-medium">Error</p>
@@ -294,7 +286,7 @@ const fetchGfgData = async (searchHandle) => {
               </div>
             )}
           </div>
-          
+
           {/* Right side - User data display */}
           <div className="w-full md:w-2/3">
             {/* Codeforces Profile */}
@@ -306,7 +298,7 @@ const fetchGfgData = async (searchHandle) => {
                     <p className="mt-4 text-indigo-700 animate-pulse">Fetching user data...</p>
                   </div>
                 )}
-                
+
                 {userData && (
                   <div className="bg-white shadow-md rounded-lg overflow-hidden">
                     {/* Header section */}
@@ -333,7 +325,7 @@ const fetchGfgData = async (searchHandle) => {
                         </div>
                       </div>
                     </div>
-                    
+
                     {/* Stats section */}
                     <div className="p-6">
                       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -344,7 +336,7 @@ const fetchGfgData = async (searchHandle) => {
                           </p>
                           <p className="text-2xl font-bold text-indigo-800">{userData.rating || "N/A"}</p>
                         </div>
-                        
+
                         <div className="border border-purple-100 rounded-lg p-4 bg-gradient-to-r from-purple-50 to-purple-100">
                           <p className="text-sm text-purple-600 mb-1 flex items-center">
                             <Award size={16} className="mr-1" />
@@ -352,7 +344,7 @@ const fetchGfgData = async (searchHandle) => {
                           </p>
                           <p className="text-2xl font-bold text-purple-800">{userData.maxRating || "N/A"}</p>
                         </div>
-                        
+
                         <div className="border border-blue-100 rounded-lg p-4 bg-gradient-to-r from-blue-50 to-blue-100">
                           <p className="text-sm text-blue-600 mb-1 flex items-center">
                             <Users size={16} className="mr-1" />
@@ -360,7 +352,7 @@ const fetchGfgData = async (searchHandle) => {
                           </p>
                           <p className="text-2xl font-bold text-blue-800">{userData.friendOfCount || "0"}</p>
                         </div>
-                        
+
                         <div className="border border-indigo-100 rounded-lg p-4 bg-gradient-to-r from-indigo-50 to-indigo-100">
                           <p className="text-sm text-indigo-600 mb-1 flex items-center">
                             <Activity size={16} className="mr-1" />
@@ -369,7 +361,7 @@ const fetchGfgData = async (searchHandle) => {
                           <p className="text-2xl font-bold text-indigo-800">{userData.contribution || "0"}</p>
                         </div>
                       </div>
-                      
+
                       {/* Rank information */}
                       <div className="mb-6">
                         <h3 className="text-lg font-semibold text-gray-700 mb-3">Rank Information</h3>
@@ -386,7 +378,7 @@ const fetchGfgData = async (searchHandle) => {
                           </div>
                         </div>
                       </div>
-                      
+
                       {/* Additional information */}
                       <div>
                         <h3 className="text-lg font-semibold text-gray-700 mb-3">Additional Information</h3>
@@ -399,7 +391,7 @@ const fetchGfgData = async (searchHandle) => {
                               </span>
                             </div>
                           )}
-                          
+
                           {userData.lastOnlineTimeSeconds && (
                             <div className="flex justify-between">
                               <span className="text-gray-600">Last online</span>
@@ -408,34 +400,34 @@ const fetchGfgData = async (searchHandle) => {
                               </span>
                             </div>
                           )}
-                          
+
                           <div className="flex justify-between">
                             <span className="text-gray-600">Country</span>
                             <span className="text-gray-800">{userData.country || "Not specified"}</span>
                           </div>
-                          
+
                           <div className="flex justify-between">
                             <span className="text-gray-600">City</span>
                             <span className="text-gray-800">{userData.city || "Not specified"}</span>
                           </div>
                         </div>
                       </div>
-                      
+
                       {/* Action buttons */}
                       <div className="mt-6 flex">
-                        <a 
-                          href={`https://codeforces.com/profile/${userData.handle}`} 
-                          target="_blank" 
+                        <a
+                          href={`https://codeforces.com/profile/${userData.handle}`}
+                          target="_blank"
                           rel="noopener noreferrer"
                           className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors duration-300 flex items-center mr-3"
                         >
                           <Star size={16} className="mr-2" />
                           View Full Profile
                         </a>
-                        
-                        <a 
-                          href={`https://codeforces.com/contests/with/${userData.handle}`} 
-                          target="_blank" 
+
+                        <a
+                          href={`https://codeforces.com/contests/with/${userData.handle}`}
+                          target="_blank"
                           rel="noopener noreferrer"
                           className="bg-white text-indigo-600 border border-indigo-600 px-4 py-2 rounded-lg hover:bg-indigo-50 transition-colors duration-300 flex items-center"
                         >
@@ -445,7 +437,7 @@ const fetchGfgData = async (searchHandle) => {
                     </div>
                   </div>
                 )}
-                
+
                 {!loading && !userData && !error && (
                   <div className="h-64 flex flex-col items-center justify-center bg-white rounded-lg shadow-md">
                     <Search size={48} className="text-indigo-200 mb-4" />
@@ -454,7 +446,7 @@ const fetchGfgData = async (searchHandle) => {
                 )}
               </>
             )}
-            
+
             {/* GeeksforGeeks Profile */}
             {activeTab === "gfg" && (
               <>
@@ -464,7 +456,7 @@ const fetchGfgData = async (searchHandle) => {
                     <p className="mt-4 text-green-700 animate-pulse">Fetching GFG user data...</p>
                   </div>
                 )}
-                
+
                 {gfgData && (
                   <div className="bg-white shadow-md rounded-lg overflow-hidden">
                     {/* Header section */}
@@ -486,7 +478,7 @@ const fetchGfgData = async (searchHandle) => {
                         </div>
                       </div>
                     </div>
-                    
+
                     {/* Stats section */}
                     <div className="p-6">
                       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -497,7 +489,7 @@ const fetchGfgData = async (searchHandle) => {
                           </p>
                           <p className="text-2xl font-bold text-green-800">{gfgData.info.codingScore}</p>
                         </div>
-                        
+
                         <div className="border border-emerald-100 rounded-lg p-4 bg-gradient-to-r from-emerald-50 to-emerald-100">
                           <p className="text-sm text-emerald-600 mb-1 flex items-center">
                             <BookOpen size={16} className="mr-1" />
@@ -505,7 +497,7 @@ const fetchGfgData = async (searchHandle) => {
                           </p>
                           <p className="text-2xl font-bold text-emerald-800">{gfgData.info.totalProblemsSolved}</p>
                         </div>
-                        
+
                         <div className="border border-teal-100 rounded-lg p-4 bg-gradient-to-r from-teal-50 to-teal-100">
                           <p className="text-sm text-teal-600 mb-1 flex items-center">
                             <GitBranch size={16} className="mr-1" />
@@ -513,7 +505,7 @@ const fetchGfgData = async (searchHandle) => {
                           </p>
                           <p className="text-2xl font-bold text-teal-800">{gfgData.info.currentStreak}</p>
                         </div>
-                        
+
                         <div className="border border-green-100 rounded-lg p-4 bg-gradient-to-r from-green-50 to-green-100">
                           <p className="text-sm text-green-600 mb-1 flex items-center">
                             <Trophy size={16} className="mr-1" />
@@ -522,7 +514,7 @@ const fetchGfgData = async (searchHandle) => {
                           <p className="text-2xl font-bold text-green-800">{gfgData.info.maxStreak}</p>
                         </div>
                       </div>
-                      
+
                       {/* Institute rank information */}
                       {gfgData.info.institute && (
                         <div className="mb-6">
@@ -541,7 +533,7 @@ const fetchGfgData = async (searchHandle) => {
                           </div>
                         </div>
                       )}
-                      
+
                       {/* Problem solving stats */}
                       <div className="mb-6">
                         <h3 className="text-lg font-semibold text-gray-700 mb-3">Problem Solving Stats</h3>
@@ -556,7 +548,7 @@ const fetchGfgData = async (searchHandle) => {
                               <div className={`h-2 rounded-full ${getDifficultyBgColor('basic')}`} style={{ width: `${(gfgData.solvedStats.basic.count / gfgData.info.totalProblemsSolved) * 100}%` }}></div>
                             </div>
                           </div>
-                          
+
                           {/* Easy */}
                           <div>
                             <div className="flex justify-between items-center mb-1">
@@ -567,7 +559,7 @@ const fetchGfgData = async (searchHandle) => {
                               <div className={`h-2 rounded-full ${getDifficultyBgColor('easy')}`} style={{ width: `${(gfgData.solvedStats.easy.count / gfgData.info.totalProblemsSolved) * 100}%` }}></div>
                             </div>
                           </div>
-                          
+
                           {/* Medium */}
                           <div>
                             <div className="flex justify-between items-center mb-1">
@@ -578,7 +570,7 @@ const fetchGfgData = async (searchHandle) => {
                               <div className={`h-2 rounded-full ${getDifficultyBgColor('medium')}`} style={{ width: `${(gfgData.solvedStats.medium.count / gfgData.info.totalProblemsSolved) * 100}%` }}></div>
                             </div>
                           </div>
-                          
+
                           {/* Hard */}
                           <div>
                             <div className="flex justify-between items-center mb-1">
@@ -591,18 +583,18 @@ const fetchGfgData = async (searchHandle) => {
                           </div>
                         </div>
                       </div>
-                    </div>  
-                  </div>   
+                    </div>
+                  </div>
                 )}
-              </>  
-           )}
+              </>
+            )}
 
           </div>
-        </div>  
+        </div>
       </div>
     </div>
   )
 }
-export default Dashboard    
+export default Dashboard
 
-          
+
