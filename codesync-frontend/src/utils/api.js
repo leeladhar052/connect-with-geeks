@@ -11,28 +11,8 @@ export const fetchLeetCodeStats = async (username) => {
   }
 };
 
-// export const fetchCodeforcesStats = async (username) => {
-//   try {
-//     const { data } = await axios.get(`${API_ENDPOINTS.CODEFORCES_USER}${username}`);
-//     return data.result[0];
-//   } catch (error) {
-//     console.error("Codeforces API Error:", error);
-//     return null;
-//   }
-// };
-
-// export const fetchGfgStats = async (username) => {
-//   try {
-//     const { data } = await axios.get(`${API_ENDPOINTS.GFG_PROFILE}${username}`);
-//     return data;
-//   } catch (error) {
-//     console.error("GFG API Error:", error);
-//     return null;
-//   }
-// };
 export const fetchGfgStats = async (username) => {
   try {
-    // Use a CORS proxy
     const response = await axios.get(
       `https://cors-anywhere.herokuapp.com/https://gfg-api-server.onrender.com/profile/${username}`
     );
@@ -45,7 +25,6 @@ export const fetchGfgStats = async (username) => {
 
 export const fetchCodeforcesStats = async (username) => {
   try {
-    // Remove the `:1` from the API URL
     const response = await axios.get(
       `https://codeforces.com/api/user.info?handles=coder_ld_01`
     );

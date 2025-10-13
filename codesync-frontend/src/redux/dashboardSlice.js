@@ -4,10 +4,10 @@ import { fetchLeetCodeStats, fetchCodeforcesStats, fetchGfgStats } from "../util
 export const fetchUserStats = createAsyncThunk(
   "dashboard/fetchUserStats",
   async (username) => {
-    // const leetCodeData = await fetchLeetCodeStats(username);
+    const leetCodeData = await fetchLeetCodeStats(username);
     const codeforcesData = await fetchCodeforcesStats(username);
-    // const gfgData = await fetchGfgStats(username);
-    return {  codeforcesData };
+    const gfgData = await fetchGfgStats(username);
+    return { leetCodeData, codeforcesData, gfgData };
   }
 );
 
